@@ -2,13 +2,14 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
 
+const username = 'Taylor-2T9'
 export default function ChatPage() {
     const [message, setMessage] = React.useState()
     const [messageList, setMessageList] = React.useState([])
     function handleNewMessage(text) {
         const message = {
             id: messageList.length - 1,
-            from: 'Taylor-2T9',
+            from: username,
             text
         }
         if (message.text.substr(-1) != ' ') {
@@ -178,7 +179,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${username}.png`}
                             />
                             <Text tag="strong">
                                 {message.from}
