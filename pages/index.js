@@ -31,8 +31,8 @@ function Titulo(props) {
 }*/
 
 export default function PaginaInicial() {
-  const [username, setUsername] = React.useState('taylor-2t9');
-  const roteamento = useRouter();
+  const [username, setUsername] = React.useState('taylor-2t9')
+  const roteamento = useRouter()
 
   return (
     <>
@@ -64,7 +64,15 @@ export default function PaginaInicial() {
             as="form"
             onSubmit={(ev) => {
               ev.preventDefault()
-              roteamento.push('/chat')
+              fetch(`https://api.github.com/users/${ev.target.value}`).then(async (res) => {
+                await console.log(res.status)
+                if (res.status === 403) {
+                  appConfig.user = username
+                  roteamento.push('/chat')
+                } else {
+                  window.alert('O nome de usuário digitado é inválido!')
+                }
+              })
             }}
             styleSheet={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -76,7 +84,8 @@ export default function PaginaInicial() {
               {appConfig.name}
             </Text>
             <TextField
-              value={username}
+              defaultValue={''}
+              required
               onChange={(ev) => {
                 const newUsername = ev.target.value
                 setUsername(newUsername)

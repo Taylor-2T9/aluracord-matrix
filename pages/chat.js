@@ -1,22 +1,41 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js'
 
-const username = 'Taylor-2T9'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNTMzNiwiZXhwIjoxOTU4ODgxMzM2fQ.d5x0-GYGmoH4xIJfW6f6WTEqvt4KLRGfnVUkY_3TOqg'
+const SUPABAsE_URL = 'https://gfuwisfyzdygijxnudni.supabase.co'
+const supabaseClient = createClient(SUPABAsE_URL, SUPABASE_ANON_KEY)
+
 export default function ChatPage() {
+    const username = appConfig.user
     const [message, setMessage] = React.useState()
     const [messageList, setMessageList] = React.useState([])
+    React.useEffect(() => {
+        supabaseClient
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .then(async ({ data }) => {
+                setMessageList(data)
+            })
+    }, [])
     function handleNewMessage(text) {
         const message = {
-            id: messageList.length - 1,
-            from: username,
+            author: username,
             text
         }
         if (message.text.substr(-1) != ' ') {
-            setMessageList([
-                message,
-                ...messageList
-            ])
+            supabaseClient
+                .from('messages')
+                .insert([
+                    message
+                ]).then(({ data }) => {
+                    setMessageList([
+                        data[0],
+                        ...messageList
+                    ])
+                })
             setMessage('')
         }
     }
@@ -30,6 +49,7 @@ export default function ChatPage() {
                 color: appConfig.theme.colors.neutrals['000']
             }}
         >
+
             <Box
                 styleSheet={{
                     display: 'flex',
@@ -45,72 +65,81 @@ export default function ChatPage() {
                 }}
             >
                 <Header />
-                <Box
-                    styleSheet={{
-                        position: 'relative',
-                        display: 'flex',
-                        flex: 1,
-                        height: '80%',
-                        backgroundColor: appConfig.theme.colors.neutrals[600],
-                        flexDirection: 'column',
-                        borderRadius: '5px',
-                        padding: '16px',
-                    }}
-                >
-                    <MessageList messageList={messageList} setMessageList={setMessageList} />
-                    <Box
-                        as="form"
-                        styleSheet={{
-                            display: 'flex',
-                            alignItems: 'center',
-                        }}
-                    >
-                        <TextField
-                            value={message}
-                            placeholder="Insira sua mensagem aqui..."
-                            type="textarea"
-                            onChange={(ev) => {
-                                const newMessage = ev.target.value
-                                setMessage(newMessage)
-                            }}
-                            onKeyPress={(evKey) => {
-                                if (evKey.key === "Enter") {
-                                    evKey.preventDefault()
-                                    handleNewMessage(message)
-                                }
-                            }}
-                            placeholder="Insira sua mensagem aqui..."
-                            type="textarea"
+                {
+                    messageList.length ?
+                        <Box
                             styleSheet={{
-                                width: '96%',
-                                border: '0',
-                                resize: 'none',
+                                position: 'relative',
+                                display: 'flex',
+                                flex: 1,
+                                height: '80%',
+                                backgroundColor: appConfig.theme.colors.neutrals[600],
+                                flexDirection: 'column',
                                 borderRadius: '5px',
-                                padding: '6px 8px',
-                                backgroundColor: appConfig.theme.colors.neutrals[800],
-                                marginRight: '12px',
-                                color: appConfig.theme.colors.neutrals[200],
+                                padding: '16px',
                             }}
+                        >
+                            {<MessageList messageList={messageList} setMessageList={setMessageList} />}
+                            <Box
+                                as="form"
+                                styleSheet={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <TextField
+                                    value={message}
+                                    placeholder="Insira sua mensagem aqui..."
+                                    type="textarea"
+                                    onChange={(ev) => {
+                                        const newMessage = ev.target.value
+                                        setMessage(newMessage)
+                                    }}
+                                    onKeyPress={(evKey) => {
+                                        if (evKey.key === "Enter") {
+                                            evKey.preventDefault()
+                                            handleNewMessage(message)
+                                        }
+                                    }}
+                                    placeholder="Insira sua mensagem aqui..."
+                                    type="textarea"
+                                    styleSheet={{
+                                        width: '96%',
+                                        border: '0',
+                                        resize: 'none',
+                                        borderRadius: '5px',
+                                        padding: '6px 8px',
+                                        backgroundColor: appConfig.theme.colors.neutrals[800],
+                                        marginRight: '12px',
+                                        color: appConfig.theme.colors.neutrals[200],
+                                    }}
+                                />
+                                <Button
+                                    variant='primary'
+                                    colorVariant='neutral'
+                                    label='Enviar'
+                                    onClick={(evButton) => {
+                                        evButton.preventDefault()
+                                        if (message) {
+                                            handleNewMessage(message)
+                                        }
+                                    }}
+                                    styleSheet={{
+                                        marginBottom: '5px',
+                                        padding: '10px 14px'
+                                    }}
+                                />
+                            </Box>
+                        </Box>
+                        : <img
+                            src={'https://i.pinimg.com/originals/65/ba/48/65ba488626025cff82f091336fbf94bb.gif'}
+                            width={'50%'}
+                            height={'50%'}
                         />
-                        <Button
-                            variant='primary'
-                            colorVariant='neutral'
-                            label='Enviar'
-                            onClick={(evButton) => {
-                                evButton.preventDefault()
-                                if (message) {
-                                    handleNewMessage(message)
-                                }
-                            }}
-                            styleSheet={{
-                                marginBottom: '5px',
-                                padding: '10px 14px'
-                            }}
-                        />
-                    </Box>
-                </Box>
+                }
             </Box>
         </Box >
+
     )
 }
 
@@ -179,10 +208,10 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/${username}.png`}
+                                src={`https://github.com/${message.author}.png`}
                             />
                             <Text tag="strong">
-                                {message.from}
+                                {message.author}
                             </Text>
                             <Text
                                 styleSheet={{
