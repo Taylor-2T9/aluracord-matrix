@@ -64,9 +64,8 @@ export default function PaginaInicial() {
             as="form"
             onSubmit={(ev) => {
               ev.preventDefault()
-              fetch(`https://api.github.com/users/${ev.target.value}`).then(async (res) => {
-                await console.log(res.status)
-                if (res.status === 403) {
+              fetch(`https://api.github.com/users/${username}`).then(async (res) => {
+                if (res.status === 200) {
                   appConfig.user = username
                   roteamento.push('/chat')
                 } else {
