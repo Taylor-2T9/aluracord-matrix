@@ -66,8 +66,7 @@ export default function PaginaInicial() {
               ev.preventDefault()
               fetch(`https://api.github.com/users/${username}`).then(async (res) => {
                 if (res.status === 200) {
-                  appConfig.user = username
-                  roteamento.push('/chat')
+                  roteamento.push(`/chat?username=${username}`)
                 } else {
                   window.alert('O nome de usuário digitado é inválido!')
                 }

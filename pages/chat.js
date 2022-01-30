@@ -1,14 +1,25 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
 import React from 'react';
+import { useRouter } from 'next/router'
 import appConfig from '../config.json';
 import { createClient } from '@supabase/supabase-js'
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker'
 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNTMzNiwiZXhwIjoxOTU4ODgxMzM2fQ.d5x0-GYGmoH4xIJfW6f6WTEqvt4KLRGfnVUkY_3TOqg'
 const SUPABAsE_URL = 'https://gfuwisfyzdygijxnudni.supabase.co'
 const supabaseClient = createClient(SUPABAsE_URL, SUPABASE_ANON_KEY)
 
+function getMessagesInRealTime(addMessage) {
+    return supabaseClient
+        .from('messages')
+        .on('INSERT', (data) => {
+            addMessage(data.new)
+        })
+        .subscribe()
+}
 export default function ChatPage() {
-    const username = appConfig.user
+    const roteamento = useRouter()
+    const username = roteamento.query.username
     const [message, setMessage] = React.useState()
     const [messageList, setMessageList] = React.useState([])
     React.useEffect(() => {
@@ -19,22 +30,28 @@ export default function ChatPage() {
             .then(async ({ data }) => {
                 setMessageList(data)
             })
+        getMessagesInRealTime((newMessage) => {
+            setMessageList((state) => {
+                return [
+                    newMessage,
+                    ...state
+                ]
+            })
+        })
     }, [])
-    function handleNewMessage(text) {
+    function handleNewMessage(text, isSticker) {
         const message = {
             author: username,
-            text
+            isSticker,
+            text: !isSticker ? text : text.replace(':sticker: ', '')
         }
-        if (message.text.substr(-1) != ' ') {
+        if (message.text.substr(-1) != ' ' && message.text != '') {
             supabaseClient
                 .from('messages')
                 .insert([
                     message
                 ]).then(({ data }) => {
-                    setMessageList([
-                        data[0],
-                        ...messageList
-                    ])
+                    console.log('Criando a mensagem')
                 })
             setMessage('')
         }
@@ -98,7 +115,7 @@ export default function ChatPage() {
                                     onKeyPress={(evKey) => {
                                         if (evKey.key === "Enter") {
                                             evKey.preventDefault()
-                                            handleNewMessage(message)
+                                            handleNewMessage(message, false)
                                         }
                                     }}
                                     placeholder="Insira sua mensagem aqui..."
@@ -114,6 +131,10 @@ export default function ChatPage() {
                                         color: appConfig.theme.colors.neutrals[200],
                                     }}
                                 />
+                                <ButtonSendSticker
+                                    onStickerClick={(sticker) => {
+                                        handleNewMessage(sticker, true)
+                                    }} />
                                 <Button
                                     variant='primary'
                                     colorVariant='neutral'
@@ -121,7 +142,7 @@ export default function ChatPage() {
                                     onClick={(evButton) => {
                                         evButton.preventDefault()
                                         if (message) {
-                                            handleNewMessage(message)
+                                            handleNewMessage(message, false)
                                         }
                                     }}
                                     styleSheet={{
@@ -166,6 +187,11 @@ function MessageList(props) {
         const newMessageList = props.messageList.filter((message) => {
             return messageId != message.id
         })
+        supabaseClient.from('messages')
+            .delete()
+            .match({ id: messageId }).then(async (res) => {
+                console.log('Mensagem deletada')
+            })
         return props.setMessageList(newMessageList)
     }
     return (
@@ -224,7 +250,14 @@ function MessageList(props) {
                                 {(new Date().toLocaleDateString())}
                             </Text>
                         </Box>
-                        {message.text}
+                        {message.isSticker ? (
+                            <Image
+                                src={message.text}
+                            />
+                        )
+                            : (
+                                message.text
+                            )}
                         <Button
                             variant='tertiary'
                             colorVariant='neutral'
